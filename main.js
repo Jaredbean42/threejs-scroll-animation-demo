@@ -2,11 +2,10 @@ import './style.css';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
-// Setup
-
 const scene = new THREE.Scene();
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
 
 const renderer = new THREE.WebGLRenderer({
   canvas: document.querySelector('#bg'),
@@ -14,117 +13,122 @@ const renderer = new THREE.WebGLRenderer({
 
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
-camera.position.setZ(30);
-camera.position.setX(-3);
-
 renderer.render(scene, camera);
 
-// Torus
+// d 20 shape
+const geometry = new THREE.IcosahedronGeometry(10);
+const material = new THREE.MeshStandardMaterial({
+  color: 0x0077ff
+});
+const d20 = new THREE.Mesh(geometry, material);
 
-const geometry = new THREE.TorusGeometry(10, 3, 16, 100);
-const material = new THREE.MeshStandardMaterial({ color: 0xff6347 });
-const torus = new THREE.Mesh(geometry, material);
+scene.add(d20);
 
-scene.add(torus);
-
-// Lights
-
+// lighting
 const pointLight = new THREE.PointLight(0xffffff);
-pointLight.position.set(5, 5, 5);
+pointLight.position.set(10, 11, 10);
+scene.add(pointLight);
 
-const ambientLight = new THREE.AmbientLight(0xffffff);
-scene.add(pointLight, ambientLight);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+scene.add(ambientLight);
 
-// Helpers
 
-// const lightHelper = new THREE.PointLightHelper(pointLight)
-// const gridHelper = new THREE.GridHelper(200, 50);
-// scene.add(lightHelper, gridHelper)
+// helpers for lighting
+const lightHelper = new THREE.PointLightHelper(pointLight);
+const gridHelper = new THREE.GridHelper(200, 50);
+// scene.add(lightHelper);
+// scene.add(gridHelper);
 
-// const controls = new OrbitControls(camera, renderer.domElement);
+// controls move around the scene
+const controls = new OrbitControls(camera, renderer.domElement);
 
+// adds in specks
 function addStar() {
   const geometry = new THREE.SphereGeometry(0.25, 24, 24);
   const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
   const star = new THREE.Mesh(geometry, material);
 
-  const [x, y, z] = Array(3)
-    .fill()
-    .map(() => THREE.MathUtils.randFloatSpread(100));
-
+  const [x, y, z] = Array(3).fill().map(() => THREE.MathUtils.randFloatSpread(100));
+  
   star.position.set(x, y, z);
   scene.add(star);
+
 }
 
 Array(200).fill().forEach(addStar);
 
-// Background
-
+// defines background
 const spaceTexture = new THREE.TextureLoader().load('space.jpg');
 scene.background = spaceTexture;
 
-// Avatar
 
-const jeffTexture = new THREE.TextureLoader().load('jeff.png');
+// cube texture example
+const cubeTexture = new THREE.TextureLoader().load('cube_text.jpg');
 
-const jeff = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshBasicMaterial({ map: jeffTexture }));
+const cube_text = new THREE.Mesh(
+  new THREE.BoxGeometry(3, 3, 3),
+  new THREE.MeshBasicMaterial({ map: cubeTexture })
+);
 
-scene.add(jeff);
+cube_text.position.set(10, 10, 0);
+scene.add(cube_text);
 
-// Moon
 
+
+// complex texture example moon
 const moonTexture = new THREE.TextureLoader().load('moon.jpg');
 const normalTexture = new THREE.TextureLoader().load('normal.jpg');
 
 const moon = new THREE.Mesh(
   new THREE.SphereGeometry(3, 32, 32),
   new THREE.MeshStandardMaterial({
-    map: moonTexture,
-    normalMap: normalTexture,
+    map:moonTexture,
+    normalMap: normalTexture
   })
 );
 
+moon.position.z = 30; //further down to see while scrolling
+moon.position.setX(-10);
 scene.add(moon);
 
-moon.position.z = 30;
-moon.position.setX(-10);
 
-jeff.position.z = -5;
-jeff.position.x = 2;
 
-// Scroll Animation
+// Set initial camera position before first render
+camera.position.set(20, 10, 0); // starting point
+const startCameraPos = camera.position.clone(); // remember where it started
 
 function moveCamera() {
   const t = document.body.getBoundingClientRect().top;
+
+  // rotate moon
   moon.rotation.x += 0.05;
   moon.rotation.y += 0.075;
   moon.rotation.z += 0.05;
 
-  jeff.rotation.y += 0.01;
-  jeff.rotation.z += 0.01;
-
-  camera.position.z = t * -0.01;
-  camera.position.x = t * -0.0002;
-  camera.rotation.y = t * -0.0002;
+  // Smooth camera movement based on starting position
+  camera.position.z = startCameraPos.z + t * -0.01;
+  camera.position.x = startCameraPos.x + t * -0.0002;
+  camera.position.y = startCameraPos.y + t * -0.0002;
 }
 
-document.body.onscroll = moveCamera;
-moveCamera();
 
-// Animation Loop
+document.body.onscroll = moveCamera;
+
+
 
 function animate() {
   requestAnimationFrame(animate);
 
-  torus.rotation.x += 0.01;
-  torus.rotation.y += 0.005;
-  torus.rotation.z += 0.01;
+  // D20 rotation
+  d20.rotation.x += 0.01;
+  d20.rotation.y += 0.01;
 
-  moon.rotation.x += 0.005;
 
-  // controls.update();
+
+  controls.update();
 
   renderer.render(scene, camera);
 }
 
 animate();
+
